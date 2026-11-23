@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.1.2",
   "type": "module",
-  "repository": "https://github.com/LukaszGrela/calendar-widget-hookrouter",
+  "repository": "https://github.com/LukaszGrela/calendar-widget-ts",
   "author": "Lukasz 'Severiaan' Grela",
   "license": "MIT",
   "scripts": {
