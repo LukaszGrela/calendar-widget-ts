@@ -13,7 +13,7 @@ export const AnimatedContainer: FC<IProps> = ({
 }) => {
   const { currentMonth, direction } = useGDCalendarContext();
   const transitionRef = useRef<HTMLDivElement>(null);
-  console.log('AnimatedContainer', timeout);
+
   return (
     <div className={`AnimatedContainer dir-${direction}`}>
       <SwitchTransition mode={mode}>
