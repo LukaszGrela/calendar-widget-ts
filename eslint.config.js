@@ -19,5 +19,23 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      'no-console': 'warn',
+
+      'react-hooks/exhaustive-deps': [
+        'warn',
+        {
+          // when adding new hooks with DependencyList make sure it has format of '(useX|useY|...)'
+          additionalHooks: 'useCleanupCallback',
+        },
+      ],
+
+      '@typescript-eslint/no-unused-expressions': [
+        'warn',
+        {
+          allowShortCircuit: true,
+        },
+      ],
+    },
   },
 ]);

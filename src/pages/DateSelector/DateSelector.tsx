@@ -17,7 +17,6 @@ const DateSelector: FC = () => {
   const onSingleDateSelected = useCallback(
     (range?: Date | TRangeSelection | null) => {
       if (!range || range instanceof Date) {
-        console.log('setSingleSelection', range);
         setSingleSelection(range ?? null);
       }
     },

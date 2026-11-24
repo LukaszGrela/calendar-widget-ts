@@ -260,6 +260,7 @@ export const HolidaySelector: FC<IHolidaySelectorProps> = ({
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const key = event.target.value as THolidaysKeys;
     if (key !== 'none') {
+      // eslint-disable-next-line no-console
       console.log(`${key} holidays`, optionsValueMap[key]);
       onChange(key, optionsValueMap[key]);
     } else {

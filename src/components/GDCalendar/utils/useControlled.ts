@@ -27,6 +27,7 @@ export const useControlled = <T, Rest extends unknown[] = []>(
     wasControlled.current = isControlled;
 
     if (!import.meta.env.PROD) {
+      // eslint-disable-next-line no-console
       console.error(
         `[useControlled] A value changed from ${previousMode} to ` +
           `${nextMode}. Decide between using a controlled or uncontrolled ` +
