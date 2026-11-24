@@ -1,10 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  calendarDates,
-  datesSame,
-  monthNames,
-  weekDays,
-} from '../utils';
+import { calendarDates, datesSame, monthNames, weekDays } from '../utils';
 
 describe('utils', () => {
   describe('weekDays', () => {
