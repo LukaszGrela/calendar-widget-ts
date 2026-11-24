@@ -23,6 +23,7 @@ export const GDYearSelector = () => {
     <select
       className="GDYearSelector year-selector"
       name="year-selector"
+      aria-label="Year"
       onChange={handleChange}
       value={currentMonth.getFullYear()}
     >

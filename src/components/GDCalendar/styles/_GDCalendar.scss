@@ -58,6 +58,11 @@
 
   &_Day {
     cursor: default;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
     /* Use CSS calc() so the runtime CSS custom property is multiplied into a percent.
        Sass cannot evaluate var(...) as a number, so perform percent arithmetic in CSS. */
     width: calc(
@@ -129,6 +134,11 @@
     display: flex;
   }
   &_MonthGrid &_Day {
+    cursor: pointer;
+    &:focus-visible {
+      outline: dashed 0.2rem colors.$gd-calendar-color-blue;
+      outline-offset: -0.4rem;
+    }
     &:hover {
       outline: dashed 0.2rem colors.$gd-calendar-color-blue;
       outline-offset: -0.4rem;

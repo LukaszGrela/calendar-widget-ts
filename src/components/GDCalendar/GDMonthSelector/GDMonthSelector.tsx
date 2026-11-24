@@ -22,6 +22,7 @@ export const GDMonthSelector: FC = () => {
     <select
       className="GDMonthSelector month-selector"
       name="month-selector"
+      aria-label="Month"
       onChange={handleChange}
       value={currentMonth.getMonth()}
     >
