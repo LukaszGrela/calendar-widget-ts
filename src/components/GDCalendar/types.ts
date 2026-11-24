@@ -3,12 +3,41 @@ import { type IProps as IAnimatedContainerProps } from './AnimatedContainer';
 export type TWorkingWeek = 7 | 6 | 5;
 export interface IProps {
   // current month and day
+  /**
+   * Reference date of the displayed month.
+   * When provided, the calendar is controlled: it does not change the
+   * displayed month itself, it only asks for the change via `onDateChanged`.
+   */
   date?: Date;
+
+  /**
+   * Navigation callback - reports a *requested* month change:
+   * - called by `next*`/`prev*`/`set*` actions,
+   * - in controlled mode also when a "spill" day outside the displayed month
+   *   is selected and `navigateOnSelect` is enabled.
+   * It never reports a selection - use `onDateSelected` for that.
+   */
   onDateChanged?: (date: Date) => void;
 
   // Selected date
   selection?: Date | TRangeSelection | null;
+
+  /**
+   * Selection callback - called on every user selection, including a "spill"
+   * day (a day outside the displayed month), which may additionally trigger
+   * navigation first. It is independent of `onDateChanged`.
+   */
   onDateSelected?: (date?: Date | TRangeSelection | null) => void;
+
+  /**
+   * Should selecting a "spill" day outside the displayed month navigate to
+   * that month.
+   * - uncontrolled: the calendar changes the displayed month itself,
+   * - controlled: it calls `onDateChanged` and lets the owner decide.
+   * Selection is always reported through `onDateSelected`, regardless of
+   * this flag. By default `true` (previous behaviour).
+   */
+  navigateOnSelect?: boolean;
 
   yearSpan?: number;
 
