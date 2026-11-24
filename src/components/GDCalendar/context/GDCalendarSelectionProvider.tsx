@@ -80,10 +80,7 @@ export const GDCalendarSelectionProvider: FC<
           // [Date, Date]
           if (currentDate == null) {
             copy[1] = null;
-          } else if (
-            // dateWithinRange(currentDate, copy) &&
-            datesSame(currentDate, copy[1], 'date')
-          ) {
+          } else if (datesSame(currentDate, copy[1], 'date')) {
             // reselected right edge, set to first and nullify second
             copy[0] = currentDate;
             copy[1] = null;

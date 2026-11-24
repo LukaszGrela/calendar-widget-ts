@@ -16,7 +16,6 @@ export const AnimatedContainer: FC<IProps> = ({
   console.log('AnimatedContainer', timeout);
   return (
     <div className={`AnimatedContainer dir-${direction}`}>
-      {/* <TransitionGroup className={classNames('SlideAnimation', direction)}> */}
       <SwitchTransition mode={mode}>
         <CSSTransition
           appear={appear}
@@ -30,7 +29,6 @@ export const AnimatedContainer: FC<IProps> = ({
           </div>
         </CSSTransition>
       </SwitchTransition>
-      {/* </TransitionGroup> */}
     </div>
   );
 };
