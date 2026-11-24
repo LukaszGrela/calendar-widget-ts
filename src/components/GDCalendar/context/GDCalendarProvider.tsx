@@ -42,11 +42,7 @@ export const GDCalendarProvider: FC<TGDCalendarProviderProps> = ({
     value: currentDate,
     onChange: onDateChanged,
     isControlled,
-  } = useControlled(
-    controlledDate,
-    controlledOnDateChanged,
-    new Date()
-  );
+  } = useControlled(controlledDate, controlledOnDateChanged, new Date());
 
   const yearList = useMemo(
     () => getYearList(today.getFullYear(), yearSpan),
