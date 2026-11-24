@@ -16,9 +16,10 @@ import {
   weekDays,
   useToday,
   add,
-  clone,
   subtract,
   startOfDay,
+  setMonthSafe,
+  setYearSafe,
 } from '../utils';
 import { useControlled } from '../utils/useControlled';
 
@@ -50,9 +51,7 @@ export const GDCalendarProvider: FC<TGDCalendarProviderProps> = ({
 
   const setMonth = useCallback(
     (month: number) => {
-      const newDate = clone(currentDate);
-
-      newDate.setMonth(Math.max(0, Math.min(month, 11)));
+      const newDate = setMonthSafe(currentDate, month);
 
       setDirection('none');
 
@@ -63,9 +62,7 @@ export const GDCalendarProvider: FC<TGDCalendarProviderProps> = ({
 
   const setYear = useCallback(
     (year: number) => {
-      const newDate = clone(currentDate);
-
-      newDate.setFullYear(year);
+      const newDate = setYearSafe(currentDate, year);
 
       setDirection('none');
 

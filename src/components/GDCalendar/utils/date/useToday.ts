@@ -11,21 +11,40 @@ const getIntervalDelay = (diff: number) => {
   }
   return 1000;
 };
+
+/**
+ * Returns the start of the current day and updates it after midnight.
+ * The value is stable for the whole day, so context consumers do not
+ * re-render on every timer tick (unlike `setToday(new Date())`).
+ */
 export const useToday = () => {
-  const [today, setToday] = useState(new Date());
+  const [today, setToday] = useState(() => startOfDay(new Date()));
 
   useEffect(() => {
-    const startOfTomorrow = startOfDay(add(today, 1, 'day'));
-    const diff = startOfTomorrow.getTime() - today.getTime();
+    let timeoutId: ReturnType<typeof setTimeout>;
 
-    const intervalId = setInterval(() => {
-      setToday(new Date());
-    }, getIntervalDelay(diff));
+    const schedule = () => {
+      const now = new Date();
+      const startOfTomorrow = startOfDay(add(now, 1, 'day'));
+      const diff = startOfTomorrow.getTime() - now.getTime();
+
+      timeoutId = setTimeout(() => {
+        const next = startOfDay(new Date());
+
+        setToday((previous) =>
+          previous.getTime() === next.getTime() ? previous : next
+        );
+
+        schedule();
+      }, getIntervalDelay(diff));
+    };
+
+    schedule();
 
     return () => {
-      clearInterval(intervalId);
+      clearTimeout(timeoutId);
     };
-  }, [today]);
+  }, []);
 
   return today;
 };

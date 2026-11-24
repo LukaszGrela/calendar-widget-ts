@@ -50,16 +50,56 @@ const addDay = (date: Date, amount: number): Date => {
   change.setDate(change.getDate() + amount);
   return change;
 };
-const addMonth = (date: Date, amount: number): Date => {
+/**
+ * Number of days in a given month.
+ * @param year Full year, e.g. 2026.
+ * @param monthIndex Zero based month index, e.g. 1 for February.
+ * @returns 28, 29, 30 or 31.
+ */
+export const daysInMonth = (year: number, monthIndex: number): number =>
+  new Date(year, monthIndex + 1, 0).getDate();
+
+/**
+ * Moves a date to another month of the same year, keeping the day of month
+ * but clamping it to the last day of the target month (31 Jan -> 28/29 Feb).
+ * @param date Source date, not mutated.
+ * @param monthIndex Target month, clamped to 0..11. Values outside are normalised by Date.
+ * @returns A new Date at the same time of day.
+ */
+export const setMonthSafe = (date: Date, monthIndex: number): Date => {
   const change = clone(date);
-  change.setMonth(change.getMonth() + amount);
+  const day = change.getDate();
+
+  change.setDate(1);
+  change.setMonth(Math.max(0, Math.min(monthIndex, 11)));
+  change.setDate(Math.min(day, daysInMonth(change.getFullYear(), change.getMonth())));
+
   return change;
 };
-const addYear = (date: Date, amount: number): Date => {
+
+/**
+ * Moves a date to another year, keeping month and day of month
+ * but clamping the day to the last day of that month (29 Feb 2024 -> 28 Feb 2025).
+ * @param date Source date, not mutated.
+ * @param year Target full year.
+ * @returns A new Date at the same time of day.
+ */
+export const setYearSafe = (date: Date, year: number): Date => {
   const change = clone(date);
-  change.setFullYear(change.getFullYear() + amount);
+  const month = change.getMonth();
+  const day = change.getDate();
+
+  change.setDate(1);
+  change.setFullYear(year);
+  change.setDate(Math.min(day, daysInMonth(year, month)));
+
   return change;
 };
+
+const addMonth = (date: Date, amount: number): Date =>
+  setMonthSafe(date, date.getMonth() + amount);
+const addYear = (date: Date, amount: number): Date =>
+  setYearSafe(date, date.getFullYear() + amount);
 
 export const add = (date: Date, amount: number, unit: TUnitOfTime): Date => {
   if (unit === 'ms') {
