@@ -220,6 +220,8 @@ npm run publish:dry    # npm pack + publish dry run
   package.
 - `vite.lib.config.ts` builds the ESM bundle, `tsconfig.lib.json` emits the
   declarations into the same `dist-lib` directory.
+- The library build does not copy `public/` — `favicon.ico`, `manifest.json` and
+  `.htaccess` are demo-only assets and stay out of `dist-lib`.
 - `react`, `react-dom` and `react-transition-group` are external in the bundle
   and declared as peer/dev dependencies.
 - `"private": true` is intentional while the package is not published. Remove

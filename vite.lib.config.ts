@@ -11,9 +11,13 @@ import { defineConfig } from 'vite';
  */
 export default defineConfig({
   plugins: [react()],
+  // `public/` holds demo-only assets (`favicon.ico`, `manifest.json`, `.htaccess`),
+  // they must not end up in the published package.
+  publicDir: false,
   build: {
     outDir: 'dist-lib',
     emptyOutDir: true,
+    copyPublicDir: false,
     sourcemap: true,
     lib: {
       entry: fileURLToPath(new URL('./src/index.ts', import.meta.url)),
