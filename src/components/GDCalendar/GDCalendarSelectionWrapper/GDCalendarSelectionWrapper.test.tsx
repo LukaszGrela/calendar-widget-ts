@@ -87,9 +87,9 @@ const setup = ({
 
 describe('GDCalendarSelectionWrapper', () => {
   it('navigates to the spill day month in uncontrolled mode', () => {
-    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup(
-      { isControlled: false }
-    );
+    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup({
+      isControlled: false,
+    });
 
     select(spill);
 
@@ -112,9 +112,10 @@ describe('GDCalendarSelectionWrapper', () => {
   });
 
   it('only requests the month change in controlled mode', () => {
-    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup(
-      { isControlled: true, selection: day(15) }
-    );
+    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup({
+      isControlled: true,
+      selection: day(15),
+    });
 
     select(spill);
 
@@ -124,9 +125,11 @@ describe('GDCalendarSelectionWrapper', () => {
   });
 
   it('keeps a spill day a pure selection in controlled mode when navigateOnSelect is false', () => {
-    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup(
-      { isControlled: true, navigateOnSelect: false, selection: day(15) }
-    );
+    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup({
+      isControlled: true,
+      navigateOnSelect: false,
+      selection: day(15),
+    });
 
     select(spill);
 
@@ -136,9 +139,9 @@ describe('GDCalendarSelectionWrapper', () => {
   });
 
   it('does not navigate when the selected day belongs to the displayed month', () => {
-    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup(
-      { isControlled: false }
-    );
+    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup({
+      isControlled: false,
+    });
 
     select(day(15));
 
@@ -148,9 +151,10 @@ describe('GDCalendarSelectionWrapper', () => {
   });
 
   it('does not navigate when the selection is cleared', () => {
-    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup(
-      { isControlled: true, selection: day(15) }
-    );
+    const { onDateSelected, onDateChanged, setDisplayedMonth, select } = setup({
+      isControlled: true,
+      selection: day(15),
+    });
 
     select(undefined);
 

@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useMemo,
-  useState,
-  type FC,
-  type ReactNode,
-} from 'react';
+import { useCallback, useMemo, useState, type FC, type ReactNode } from 'react';
 import {
   GDCalendarSelectionActionContext,
   GDCalendarSelectionContext,

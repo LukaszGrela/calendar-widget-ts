@@ -72,7 +72,9 @@ export const setMonthSafe = (date: Date, monthIndex: number): Date => {
 
   change.setDate(1);
   change.setMonth(Math.max(0, Math.min(monthIndex, 11)));
-  change.setDate(Math.min(day, daysInMonth(change.getFullYear(), change.getMonth())));
+  change.setDate(
+    Math.min(day, daysInMonth(change.getFullYear(), change.getMonth()))
+  );
 
   return change;
 };
