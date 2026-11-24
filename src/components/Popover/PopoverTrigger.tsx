@@ -22,7 +22,6 @@ export const PopoverTrigger = React.forwardRef<
     return React.cloneElement(
       children,
       // False positive: https://github.com/floating-ui/floating-ui/discussions/3405#discussioncomment-14657647
-      // eslint-disable-next-line react-hooks/refs
       context.getReferenceProps({
         ref,
         ...props,

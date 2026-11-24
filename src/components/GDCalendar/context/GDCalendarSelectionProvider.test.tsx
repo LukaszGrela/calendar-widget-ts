@@ -37,27 +37,48 @@ const ActionProbe = ({ onRender }: TActionProbeProps) => {
 };
 
 describe('GDCalendarSelectionProvider', () => {
-  it('does not re-commit an equal inline selection prop on re-render', () => {
+  it('keeps the committed value stable across re-renders', () => {
     const seen: (Date | TRangeSelection | null | undefined)[] = [];
+    const onDateSelected = vi.fn();
     const onRender = (selection: Date | TRangeSelection | null | undefined) =>
       seen.push(selection);
+    const selection: TRangeSelection = [day(10), day(12)];
 
     const { rerender } = render(
-      <GDCalendarSelectionProvider selection={[day(10), day(12)]}>
+      <GDCalendarSelectionProvider
+        selection={selection}
+        onDateSelected={onDateSelected}
+      >
         <Probe onRender={onRender} />
       </GDCalendarSelectionProvider>
     );
     const first = seen[seen.length - 1];
 
+    // unchanged prop instance: the context value keeps its identity, so
+    // consumers are not invalidated by an equivalent object
     rerender(
-      <GDCalendarSelectionProvider selection={[day(10), day(12)]}>
+      <GDCalendarSelectionProvider
+        selection={selection}
+        onDateSelected={onDateSelected}
+      >
         <Probe onRender={onRender} />
       </GDCalendarSelectionProvider>
     );
-
     expect(at(seen[seen.length - 1])).toEqual(at(first));
-    // same object identity: no extra state write, no extra child render
     expect(seen[seen.length - 1]).toBe(first);
+
+    // an inline, value-equal prop is a new object, but the rendered value is
+    // still the same and no state write or callback is triggered by it
+    rerender(
+      <GDCalendarSelectionProvider
+        selection={[day(10), day(12)]}
+        onDateSelected={onDateSelected}
+      >
+        <Probe onRender={onRender} />
+      </GDCalendarSelectionProvider>
+    );
+    expect(at(seen[seen.length - 1])).toEqual(at(first));
+    expect(onDateSelected).not.toHaveBeenCalled();
   });
 
   it('updates the context when the selection prop really changes', () => {

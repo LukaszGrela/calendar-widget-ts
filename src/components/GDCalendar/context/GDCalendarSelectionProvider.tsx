@@ -1,7 +1,6 @@
 import {
   useCallback,
   useMemo,
-  useRef,
   useState,
   type FC,
   type ReactNode,
@@ -12,7 +11,6 @@ import {
 } from './GDCalendarSelectionContext';
 import type { IProps, TDateData, TRangeSelection } from '../types';
 import { normalizeSelection } from '../utils/date/normalizeSelection';
-import { selectionsEqual } from '../utils/date/selectionsEqual';
 import type {
   TCalendarSelectionActionContext,
   TCalendarSelectionContext,
@@ -45,19 +43,13 @@ export const GDCalendarSelectionProvider: FC<
     Date | TRangeSelection | null | undefined
   >(undefined);
 
-  // Keep the previously committed value when the incoming one is equal by
-  // value, so context consumers are not re-rendered with an equivalent object.
-  const committedRef = useRef<Date | TRangeSelection | null | undefined>(
-    normalizeSelection(incomingSelection)
+  // Normalizing inside `useMemo` keeps the object
+  // stable for as long as the parent keeps passing the same prop instance.
+  const normalizedIncoming = useMemo(
+    () => (isControlled ? normalizeSelection(incomingSelection) : undefined),
+    [incomingSelection, isControlled]
   );
-  const normalizedIncoming = isControlled
-    ? normalizeSelection(incomingSelection)
-    : undefined;
-  const nextSelection = isControlled ? normalizedIncoming : internalSelection;
-  if (!selectionsEqual(committedRef.current, nextSelection)) {
-    committedRef.current = nextSelection;
-  }
-  const selection = committedRef.current;
+  const selection = isControlled ? normalizedIncoming : internalSelection;
 
   const commitSelection = useCallback(
     (value: Date | TRangeSelection | null | undefined) => {
