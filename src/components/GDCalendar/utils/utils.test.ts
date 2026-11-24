@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { calendarDates, monthNames, weekDays } from '../utils';
+import {
+  calendarDates,
+  datesSame,
+  monthNames,
+  weekDays,
+} from '../utils';
 
 describe('utils', () => {
   describe('weekDays', () => {
@@ -280,6 +285,26 @@ describe('utils', () => {
       const sunday = allDays.find((item) => item.date.getDay() === 0);
       expect(sunday).toBeDefined();
       expect(sunday?.holiday).toBe(false);
+    });
+  });
+
+  describe('datesSame', () => {
+    const at = (dayOfMonth: number, hour = 0) =>
+      new Date(2026, 2, dayOfMonth, hour);
+
+    it('compares the exact timestamp by default', () => {
+      expect(datesSame(at(9), at(9))).toBe(true);
+      expect(datesSame(at(9), at(9, 1))).toBe(false);
+    });
+
+    it('ignores the time of day at date precision', () => {
+      expect(datesSame(at(9), at(9, 23), 'date')).toBe(true);
+      expect(datesSame(at(9), at(10, 1), 'date')).toBe(false);
+    });
+
+    it('returns false when one of the dates is missing', () => {
+      expect(datesSame(undefined, at(9), 'date')).toBe(false);
+      expect(datesSame(at(9), undefined)).toBe(false);
     });
   });
 });

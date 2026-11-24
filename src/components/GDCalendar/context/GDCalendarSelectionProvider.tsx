@@ -71,7 +71,7 @@ export const GDCalendarSelectionProvider: FC<
             copy[0] = null;
           } else if (dateLaterThan(currentDate, copy[0])) {
             copy[1] = currentDate;
-          } else if (currentDate < copy[0]) {
+          } else if (dateEarlierThan(currentDate, copy[0])) {
             /* swap */
             copy[1] = copy[0];
             copy[0] = currentDate;

@@ -56,17 +56,17 @@ const GDCalendarRow: React.FC<IProps> = ({
                 selection &&
                 !(selection instanceof Date) &&
                 !!selection[0] &&
-                datesSame(day, selection[0])
+                datesSame(day, selection[0], 'date')
               )
             }
             endSelection={
               !!(
                 selection &&
                 !(selection instanceof Date) &&
-                ((!!selection[1] && datesSame(day, selection[1])) ||
+                ((!!selection[1] && datesSame(day, selection[1], 'date')) ||
                   (!!selection[0] &&
                     !selection[1] &&
-                    datesSame(day, selection[0])))
+                    datesSame(day, selection[0], 'date')))
               )
             }
           />
