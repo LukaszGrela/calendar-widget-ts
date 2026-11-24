@@ -103,6 +103,12 @@ const addMonth = (date: Date, amount: number): Date =>
 const addYear = (date: Date, amount: number): Date =>
   setYearSafe(date, date.getFullYear() + amount);
 
+/**
+ * Moves `date` forward by `amount` units.
+ *
+ * `amount` is used as an absolute value, so `add(date, -1, 'month')` still
+ * moves the date *forward*. Use `subtract` to move backwards.
+ */
 export const add = (date: Date, amount: number, unit: TUnitOfTime): Date => {
   if (unit === 'ms') {
     return addMillisecond(date, Math.abs(amount));
@@ -128,7 +134,12 @@ export const add = (date: Date, amount: number, unit: TUnitOfTime): Date => {
 
   return date;
 };
-
+/**
+ * Moves `date` backwards by `amount` units.
+ *
+ * `amount` is used as an absolute value, so `subtract(date, -1, 'month')`
+ * still moves the date *backwards* (`add` is the forward counterpart).
+ */
 export const subtract = (
   date: Date,
   amount: number,
@@ -244,9 +255,44 @@ export const getYearList = (start: number, around: number): number[] => {
 };
 
 /**
+ * Runs the user supplied `holidayCallback` in a way that cannot break the
+ * whole calendar render.
+ *
+ * - no callback - returns `null`, so the default (`sunday`) marking applies,
+ * - callback returns `true`/`false` - that value wins, `false` disables the
+ *   default Sunday marking on purpose,
+ * - callback returns `null`/`undefined` - falls back to the default marking,
+ * - callback throws - the error is reported only in development and the day
+ *   falls back to the default marking, the rest of the calendar still renders.
+ */
+const holidayFor = (
+  date: Date,
+  holidayCallback?: (date: Date) => boolean | null
+): boolean | null => {
+  if (!holidayCallback) {
+    return null;
+  }
+
+  try {
+    return holidayCallback(date) ?? null;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.error('GDCalendar: holidayCallback threw an error', error);
+    }
+    return null;
+  }
+};
+
+/**
  * Creates a list of dates to build calendar page. It will create a span of 6 weeks to accomodate previous and next months.
  * @param now reference date
  * @param mondayFirst when `true` calendar week starts on Monday, and dates are offset by 1.
+ * @param workingWeek length of the working week, `7` (Mon-Sun) by default.
+ * @param holidayCallback optional per-day holiday marker. Returning `null` or
+ * `undefined` keeps the default marking (Sunday). Returning `false` disables
+ * the default Sunday marking for that day. A throwing callback is caught, the
+ * day keeps the default marking and the error is logged only in development.
  */
 export const calendarDates = (
   now: Date,
@@ -285,7 +331,7 @@ export const calendarDates = (
       const sunday = date.getDay() === 0;
       const data: TDateData = {
         date,
-        holiday: holidayCallback?.(date) ?? sunday,
+        holiday: holidayFor(date, holidayCallback) ?? sunday,
         spill: firstOfMonth.getMonth() != date.getMonth(),
         weekend: sunday || date.getDay() === 6,
       };

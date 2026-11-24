@@ -1,6 +1,16 @@
 import { describe, expect, it, vi } from 'vitest';
 import { calendarDates, datesSame, monthNames, weekDays } from '../utils';
 
+const flattenDates = (
+  holidayCallback?: (date: Date) => boolean | null
+): { holiday?: boolean; isSunday: boolean }[] =>
+  calendarDates(new Date(2026, 2, 1), false, 7, holidayCallback)
+    .flat()
+    .map((data) => ({
+      holiday: data.holiday,
+      isSunday: data.date.getDay() === 0,
+    }));
+
 describe('utils', () => {
   describe('weekDays', () => {
     it('returns English short week day names for en-US', () => {
@@ -300,6 +310,48 @@ describe('utils', () => {
     it('returns false when one of the dates is missing', () => {
       expect(datesSame(undefined, at(9), 'date')).toBe(false);
       expect(datesSame(at(9), undefined)).toBe(false);
+    });
+  });
+
+  describe('calendarDates holidayCallback', () => {
+    it('keeps the Sunday default when the callback returns null', () => {
+      const days = flattenDates(() => null);
+
+      expect(days.some((day) => day.isSunday)).toBe(true);
+      expect(
+        days.filter((day) => day.isSunday).every((day) => day.holiday === true)
+      ).toBe(true);
+    });
+
+    it('lets the callback disable the Sunday default', () => {
+      const days = flattenDates(() => false);
+
+      expect(days.some((day) => day.isSunday)).toBe(true);
+      expect(days.every((day) => day.holiday === false)).toBe(true);
+    });
+
+    it('survives a throwing callback and warns in development', () => {
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      try {
+        const days = flattenDates((date) => {
+          if (date.getDate() === 15) {
+            throw new Error('holidayCallback boom');
+          }
+          return null;
+        });
+
+        // the failing day falls back to the default marking (not a holiday)
+        expect(days.every((day) => day.holiday !== undefined)).toBe(true);
+        expect(
+          days
+            .filter((day) => day.isSunday)
+            .every((day) => day.holiday === true)
+        ).toBe(true);
+        expect(errorSpy).toHaveBeenCalled();
+      } finally {
+        errorSpy.mockRestore();
+      }
     });
   });
 });

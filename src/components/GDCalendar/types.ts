@@ -73,7 +73,12 @@ export interface IProps {
   /**
    * Use it to customise `holiday` property setup.
    * @param date Date to test if it is a holiday
-   * @returns `true` if given date should be marked as `holiday`. Return `null` for default behaviour.
+   * @returns `true` if given date should be marked as `holiday`, `false` to
+   * clear the marking (this also disables the default Sunday marking for that
+   * day), `null`/`undefined` to keep the default behaviour.
+   *
+   * A throwing callback cannot break the calendar: the error is caught, the day
+   * keeps the default marking and the error is logged only in development.
    */
   holidayCallback?: (date: Date) => boolean | null;
 }
