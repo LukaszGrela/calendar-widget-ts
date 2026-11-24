@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { GDCalendarSelectionProvider } from './GDCalendarSelectionProvider';
@@ -34,6 +35,54 @@ const ActionProbe = ({ onRender }: TActionProbeProps) => {
   const context = useGDCalendarSelectionActionContext();
   if (context) onRender(context.selectDate);
   return null;
+};
+
+type TRangeHarnessProps = {
+  initial: TRangeSelection;
+  onSelection: (selection: Date | TRangeSelection | null | undefined) => void;
+  onAction: (selectDate: TCalendarSelectionActionContext['selectDate']) => void;
+};
+
+// Range selection only works in controlled mode: the provider derives the range
+// from the `selection` prop, so the harness feeds every emitted value back.
+const RangeHarness = ({
+  initial,
+  onSelection,
+  onAction,
+}: TRangeHarnessProps) => {
+  const [selection, setSelection] = useState<
+    Date | TRangeSelection | null | undefined
+  >(initial);
+
+  return (
+    <GDCalendarSelectionProvider
+      selection={selection}
+      onDateSelected={setSelection}
+    >
+      <Probe onRender={onSelection} />
+      <ActionProbe onRender={onAction} />
+    </GDCalendarSelectionProvider>
+  );
+};
+
+const renderRange = (initial: TRangeSelection) => {
+  const seen: (Date | TRangeSelection | null | undefined)[] = [];
+  const actions: TCalendarSelectionActionContext['selectDate'][] = [];
+
+  render(
+    <RangeHarness
+      initial={initial}
+      onSelection={(selection) => seen.push(selection)}
+      onAction={(selectDate) => actions.push(selectDate)}
+    />
+  );
+
+  const latest = () => at(seen[seen.length - 1]);
+  const click = (date: Date | null) => {
+    act(() => actions[actions.length - 1](date ? { date } : null));
+  };
+
+  return { latest, click };
 };
 
 describe('GDCalendarSelectionProvider', () => {
@@ -198,5 +247,107 @@ describe('GDCalendarSelectionProvider', () => {
     );
 
     expect(seen[seen.length - 1]).toBeUndefined();
+  });
+});
+
+describe('GDCalendarSelectionProvider range selection', () => {
+  it('opens a range and closes it with a later date', () => {
+    const { latest, click } = renderRange([null, null]);
+
+    click(day(10));
+    expect(latest()).toEqual([day(10).getTime(), null]);
+
+    click(day(12));
+    expect(latest()).toEqual([day(10).getTime(), day(12).getTime()]);
+  });
+
+  it('swaps the edges when the second click is earlier than the first', () => {
+    const { latest, click } = renderRange([null, null]);
+
+    click(day(12));
+    click(day(10));
+
+    expect(latest()).toEqual([day(10).getTime(), day(12).getTime()]);
+  });
+
+  it('narrows the range when a day inside it is clicked', () => {
+    const { latest, click } = renderRange([day(10), day(14)]);
+
+    click(day(12));
+
+    expect(latest()).toEqual([day(10).getTime(), day(12).getTime()]);
+  });
+
+  it('clears the range when the start edge is clicked again', () => {
+    const { latest, click } = renderRange([day(10), day(14)]);
+
+    click(day(10));
+
+    expect(latest()).toEqual([null, null]);
+  });
+
+  it('starts a new range when the end edge is clicked again', () => {
+    const { latest, click } = renderRange([day(10), day(14)]);
+
+    click(day(14));
+
+    expect(latest()).toEqual([day(14).getTime(), null]);
+  });
+
+  it('expands the range on both sides', () => {
+    const { latest, click } = renderRange([day(10), day(14)]);
+
+    click(day(8));
+    expect(latest()).toEqual([day(8).getTime(), day(14).getTime()]);
+
+    click(day(20));
+    expect(latest()).toEqual([day(8).getTime(), day(20).getTime()]);
+  });
+
+  it('drops the end edge and then the whole range for an empty selection', () => {
+    const { latest, click } = renderRange([day(10), day(14)]);
+
+    click(null);
+    expect(latest()).toEqual([day(10).getTime(), null]);
+
+    click(null);
+    expect(latest()).toEqual([null, null]);
+  });
+
+  it('drops the end edge when the start day is clicked again', () => {
+    const { latest, click } = renderRange([day(10), null]);
+
+    click(day(10));
+
+    expect(latest()).toEqual([null, null]);
+  });
+
+  it('normalizes a clicked date to the start of the day', () => {
+    const { latest, click } = renderRange([null, null]);
+
+    click(new Date(2026, 2, 10, 15, 30));
+
+    const selection = latest() as [number, null];
+    expect(selection[1]).toBeNull();
+
+    const start = new Date(selection[0]);
+    expect([
+      start.getHours(),
+      start.getMinutes(),
+      start.getSeconds(),
+      start.getMilliseconds(),
+    ]).toEqual([0, 0, 0, 0]);
+  });
+
+  it('normalizes a [null, Date] prop to [Date, null]', () => {
+    const seen: (Date | TRangeSelection | null | undefined)[] = [];
+
+    render(
+      <GDCalendarSelectionProvider selection={[null, day(10)]}>
+        <Probe onRender={(selection) => seen.push(selection)} />
+      </GDCalendarSelectionProvider>
+    );
+
+    expect(at(seen[seen.length - 1])).toEqual([day(10).getTime(), null]);
   });
 });

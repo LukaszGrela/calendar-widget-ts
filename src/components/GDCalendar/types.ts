@@ -19,7 +19,12 @@ export interface IProps {
    */
   onDateChanged?: (date: Date) => void;
 
-  // Selected date
+  /**
+   * Selected date (`Date`) or range (`[start, end]`).
+   * Passing `undefined` keeps the calendar uncontrolled, `null` clears it.
+   * A single selected day is a complete, one day long range - see
+   * `TRangeSelection`.
+   */
   selection?: Date | TRangeSelection | null;
 
   /**
@@ -85,4 +90,13 @@ export type TDateData = {
   weekend?: boolean;
 };
 
+/**
+ * Range selection: `[start, end]`, where both ends are optional while the user
+ * is still picking.
+ *
+ * A single selected day is a valid, complete range: it is reported as
+ * `[date, null]` and that day receives both the `start` and the `end` class, so
+ * a one day range can be styled like any other range. `[null, null]` means that
+ * nothing is selected.
+ */
 export type TRangeSelection = [start: Date | null, end: Date | null];
