@@ -11,6 +11,13 @@ export const Layout = () => {
         <div className="credits">
           Arrow Up/Down by Design Effectz from the Noun Project
         </div>
+        <div className="copyright">
+          <span>GrelaDesign (c) {new Date().getFullYear()}</span>
+          <span className="GrelaDesign_info">
+            <span className="GrelaDesign_version">v{__APP_VERSION__}</span>
+            <span className="GrelaDesign_commit">({__APP_COMMIT__})</span>
+          </span>
+        </div>
       </footer>
     </>
   );
