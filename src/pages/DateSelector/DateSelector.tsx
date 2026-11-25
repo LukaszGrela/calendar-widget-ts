@@ -10,14 +10,13 @@ import { WorkingWeekLength } from '../toolbox/WorkingWeekLength';
 const DateSelector: FC = () => {
   const [mondayFirst, setMondayFirst] = useState(true);
   const [animate, setAnimate] = useState(false);
-    const [workingWeek, setWorkingWeek] =
-      useState<Exclude<IProps['workingWeek'], undefined | null>>(7);
+  const [workingWeek, setWorkingWeek] =
+    useState<Exclude<IProps['workingWeek'], undefined | null>>(7);
 
   const [singleDateSelection, setSingleSelection] = useState<Date | null>(null);
   const onSingleDateSelected = useCallback(
     (range?: Date | TRangeSelection | null) => {
       if (!range || range instanceof Date) {
-        console.log('setSingleSelection', range);
         setSingleSelection(range ?? null);
       }
     },

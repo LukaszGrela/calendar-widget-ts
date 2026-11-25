@@ -236,8 +236,6 @@ const englishHolidays: THolidaysMap = new Map([
   ], // 26 Nov 2026
 ]);
 
-console.log('polishHolidays', polishHolidays);
-
 const optionsValueMap = {
   polish: polishHolidays,
   anglosaxon: englishHolidays,
@@ -262,6 +260,8 @@ export const HolidaySelector: FC<IHolidaySelectorProps> = ({
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const key = event.target.value as THolidaysKeys;
     if (key !== 'none') {
+      // eslint-disable-next-line no-console
+      console.log(`${key} holidays`, optionsValueMap[key]);
       onChange(key, optionsValueMap[key]);
     } else {
       onChange('none', null);

@@ -8,6 +8,7 @@ import Calendar from './Calendar';
 import { subtract } from '../components/GDCalendar/utils';
 import YearView from './YearView';
 import { DateSelectorPage } from './DateSelector';
+import { Layout } from './Layout';
 
 type TRouter = ReturnType<typeof createBrowserRouter>;
 
@@ -16,40 +17,49 @@ let router: TRouter;
 export const getRouteObjectList = (): RouteObject[] => {
   const devpaths: RouteObject[] = [];
 
-  return (
-    [
-      {
-        path: '/',
-        element: <Home />,
-      },
-      {
-        path: '/router-calendar/:year?/:month?/:date?',
-        element: <RouterCalendar />,
-      },
-      {
-        path: '/ts-clock',
-        element: <TSClock />,
-      },
-      {
-        path: '/calendar',
-        element: <Calendar />,
-      },
-      {
-        path: '/linked-calendars',
-        element: (
-          <LinkedCalendars initialDate={subtract(new Date(), 5, 'months')} />
-        ),
-      },
-      {
-        path: '/year-view',
-        element: <YearView />,
-      },
-      {
-        path: '/date-selector',
-        element: <DateSelectorPage />,
-      },
-    ] as RouteObject[]
-  ).concat(devpaths);
+  return [
+    {
+      path: '/',
+      element: <Layout />,
+      children: (
+        [
+          {
+            index: true,
+            path: '/',
+            element: <Home />,
+          },
+          {
+            path: '/router-calendar/:year?/:month?/:date?',
+            element: <RouterCalendar />,
+          },
+          {
+            path: '/ts-clock',
+            element: <TSClock />,
+          },
+          {
+            path: '/calendar',
+            element: <Calendar />,
+          },
+          {
+            path: '/linked-calendars',
+            element: (
+              <LinkedCalendars
+                initialDate={subtract(new Date(), 5, 'months')}
+              />
+            ),
+          },
+          {
+            path: '/year-view',
+            element: <YearView />,
+          },
+          {
+            path: '/date-selector',
+            element: <DateSelectorPage />,
+          },
+        ] as RouteObject[]
+      ).concat(devpaths),
+    },
+  ];
 };
 
 /* v8 ignore start */

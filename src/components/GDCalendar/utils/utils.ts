@@ -50,17 +50,78 @@ const addDay = (date: Date, amount: number): Date => {
   change.setDate(change.getDate() + amount);
   return change;
 };
-const addMonth = (date: Date, amount: number): Date => {
+/**
+ * Number of days in a given month.
+ * @param year Full year, e.g. 2026.
+ * @param monthIndex Zero based month index, e.g. 1 for February.
+ * @returns 28, 29, 30 or 31.
+ */
+export const daysInMonth = (year: number, monthIndex: number): number =>
+  new Date(year, monthIndex + 1, 0).getDate();
+
+/**
+ * Moves a date to another month of the same year, keeping the day of month
+ * but clamping it to the last day of the target month (31 Jan -> 28/29 Feb).
+ * @param date Source date, not mutated.
+ * @param monthIndex Target month, clamped to 0..11. The year is never changed.
+ * @returns A new Date at the same time of day.
+ * @remarks Use {@link add} / {@link subtract} when the move has to cross the
+ * year boundary, e.g. December 2026 + 1 month -> January 2027.
+ */
+export const setMonthSafe = (date: Date, monthIndex: number): Date => {
   const change = clone(date);
-  change.setMonth(change.getMonth() + amount);
-  return change;
-};
-const addYear = (date: Date, amount: number): Date => {
-  const change = clone(date);
-  change.setFullYear(change.getFullYear() + amount);
+  const day = change.getDate();
+
+  change.setDate(1);
+  change.setMonth(Math.max(0, Math.min(monthIndex, 11)));
+  change.setDate(
+    Math.min(day, daysInMonth(change.getFullYear(), change.getMonth()))
+  );
+
   return change;
 };
 
+/**
+ * Moves a date to another year, keeping month and day of month
+ * but clamping the day to the last day of that month (29 Feb 2024 -> 28 Feb 2025).
+ * @param date Source date, not mutated.
+ * @param year Target full year.
+ * @returns A new Date at the same time of day.
+ */
+export const setYearSafe = (date: Date, year: number): Date => {
+  const change = clone(date);
+  const month = change.getMonth();
+  const day = change.getDate();
+
+  change.setDate(1);
+  change.setFullYear(year);
+  change.setDate(Math.min(day, daysInMonth(year, month)));
+
+  return change;
+};
+
+const addMonth = (date: Date, amount: number): Date => {
+  const change = clone(date);
+  const day = change.getDate();
+  const targetMonth = change.getMonth() + amount;
+  const year = change.getFullYear() + Math.floor(targetMonth / 12);
+  const month = ((targetMonth % 12) + 12) % 12;
+
+  change.setDate(1);
+  change.setFullYear(year, month, 1);
+  change.setDate(Math.min(day, daysInMonth(year, month)));
+
+  return change;
+};
+const addYear = (date: Date, amount: number): Date =>
+  setYearSafe(date, date.getFullYear() + amount);
+
+/**
+ * Moves `date` forward by `amount` units.
+ *
+ * `amount` is used as an absolute value, so `add(date, -1, 'month')` still
+ * moves the date *forward*. Use `subtract` to move backwards.
+ */
 export const add = (date: Date, amount: number, unit: TUnitOfTime): Date => {
   if (unit === 'ms') {
     return addMillisecond(date, Math.abs(amount));
@@ -86,7 +147,12 @@ export const add = (date: Date, amount: number, unit: TUnitOfTime): Date => {
 
   return date;
 };
-
+/**
+ * Moves `date` backwards by `amount` units.
+ *
+ * `amount` is used as an absolute value, so `subtract(date, -1, 'month')`
+ * still moves the date *backwards* (`add` is the forward counterpart).
+ */
 export const subtract = (
   date: Date,
   amount: number,
@@ -202,9 +268,44 @@ export const getYearList = (start: number, around: number): number[] => {
 };
 
 /**
+ * Runs the user supplied `holidayCallback` in a way that cannot break the
+ * whole calendar render.
+ *
+ * - no callback - returns `null`, so the default (`sunday`) marking applies,
+ * - callback returns `true`/`false` - that value wins, `false` disables the
+ *   default Sunday marking on purpose,
+ * - callback returns `null`/`undefined` - falls back to the default marking,
+ * - callback throws - the error is reported only in development and the day
+ *   falls back to the default marking, the rest of the calendar still renders.
+ */
+const holidayFor = (
+  date: Date,
+  holidayCallback?: (date: Date) => boolean | null
+): boolean | null => {
+  if (!holidayCallback) {
+    return null;
+  }
+
+  try {
+    return holidayCallback(date) ?? null;
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.error('GDCalendar: holidayCallback threw an error', error);
+    }
+    return null;
+  }
+};
+
+/**
  * Creates a list of dates to build calendar page. It will create a span of 6 weeks to accomodate previous and next months.
  * @param now reference date
  * @param mondayFirst when `true` calendar week starts on Monday, and dates are offset by 1.
+ * @param workingWeek length of the working week, `7` (Mon-Sun) by default.
+ * @param holidayCallback optional per-day holiday marker. Returning `null` or
+ * `undefined` keeps the default marking (Sunday). Returning `false` disables
+ * the default Sunday marking for that day. A throwing callback is caught, the
+ * day keeps the default marking and the error is logged only in development.
  */
 export const calendarDates = (
   now: Date,
@@ -243,7 +344,7 @@ export const calendarDates = (
       const sunday = date.getDay() === 0;
       const data: TDateData = {
         date,
-        holiday: holidayCallback?.(date) ?? sunday,
+        holiday: holidayFor(date, holidayCallback) ?? sunday,
         spill: firstOfMonth.getMonth() != date.getMonth(),
         weekend: sunday || date.getDay() === 6,
       };
@@ -380,424 +481,3 @@ export const dateWithinRange = (date: Date, range: Date | TRangeSelection) => {
     );
   }
 };
-
-/*
-console.log(
-  'datesSame, expect false',
-  datesSame(
-    new Date(
-      'Mon May 11 2026 00:00:00 GMT+0200 (Central European Summer Time)'
-    ),
-    new Date(
-      'Sun May 10 2026 12:10:48 GMT+0200 (Central European Summer Time)'
-    ),
-    'day'
-  )
-);
-console.log(
-  'dateWithinRange',
-  dateWithinRange(
-    new Date(1979, 5, 13, 12, 1, 14, 16),
-    new Date(1979, 5, 14, 12, 1, 14, 15)
-  ) === false
-);
-console.log(
-  'dateWithinRange',
-  dateWithinRange(
-    new Date(1979, 5, 13, 12, 1, 14, 16),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateWithinRange right',
-  dateWithinRange(new Date(1979, 5, 13, 12, 1, 14, 16), [
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 16),
-  ]) === true
-);
-console.log(
-  'dateWithinRange left',
-  dateWithinRange(new Date(1979, 5, 13, 12, 1, 14, 15), [
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 16),
-  ]) === true
-);
-console.log(
-  'dateWithinRange middle',
-  dateWithinRange(new Date(1979, 5, 13, 12, 1, 14, 16), [
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 17),
-  ]) === true
-);
-console.log(
-  'dateWithinRange out right',
-  dateWithinRange(new Date(1979, 5, 14, 12, 1, 14, 17), [
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 16),
-  ]) === false
-);
-console.log(
-  'dateWithinRange out left',
-  dateWithinRange(new Date(1979, 5, 12, 12, 1, 14, 13), [
-    new Date(1979, 5, 13, 12, 1, 14, 14),
-    new Date(1979, 5, 13, 12, 1, 14, 16),
-  ]) === false
-);
-*/
-
-/* 
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 14)
-  ) === false
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 14),
-    'second'
-  ) === true
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 10, 15),
-    'second'
-  ) === false
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 10, 15),
-    'minute'
-  ) === true
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 2, 10, 15),
-    'minute'
-  ) === false
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 2, 10, 15),
-    'hour'
-  ) === true
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 13, 2, 10, 15),
-    'hour'
-  ) === false
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 13, 2, 10, 15),
-    'date'
-  ) === true
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 14, 13, 2, 10, 15),
-    'date'
-  ) === false
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 14, 13, 2, 10, 15),
-    'month'
-  ) === true
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 4, 14, 13, 2, 10, 15),
-    'month'
-  ) === false
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 4, 14, 13, 2, 10, 15),
-    'year'
-  ) === true
-);
-console.log(
-  'datesSame',
-  datesSame(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1980, 8, 16, 12, 1, 14, 15),
-    'year'
-  ) === false
-);
-console.log(
-  'datesSame',
-  datesSame(undefined, new Date(1980, 8, 16, 12, 1, 14, 15)) === false
-);
-console.log(
-  'datesSame',
-  datesSame(new Date(1980, 8, 16, 12, 1, 14, 15), undefined) === false
-);
-console.log('datesSame', datesSame(undefined, undefined) === false);
-{
-  const jun30bst = new Date('Wed Jun 30 1999 23:00:00 GMT+0100');
-  const jul1cet = new Date('Thu Jul 01 1999 00:00:00 GMT+0200');
-  console.log('datesSame', datesSame(jun30bst, jul1cet) === true);
-} 
-*/
-/*
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(undefined, new Date(1980, 8, 16, 12, 1, 14, 15)) === false
-);
-console.log(
-  '!dateEarlierThan',
-  dateEarlierThan(new Date(1980, 8, 16, 12, 1, 14, 15), undefined) === true
-);
-console.log('dateEarlierThan', dateEarlierThan(undefined, undefined) === false);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1980, 8, 16, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1980, 8, 16, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === false
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === false
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 13, 12, 1, 14, 1),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 13, 12, 1, 1, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 13, 12, 0, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 13, 1, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 1, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 1, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(197, 5, 13, 12, 1, 14, 15),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(new Date(), new Date(1979, 5, 13, 12, 1, 14, 15)) === false
-);
-console.log('dateEarlierThan', dateEarlierThan(new Date()) === false);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 13, 12, 1, 14, 14),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === true
-);
-console.log(
-  'dateEarlierThan',
-  dateEarlierThan(
-    new Date(1979, 5, 13, 12, 1, 14, 16),
-    new Date(1979, 5, 13, 12, 1, 14, 15)
-  ) === false
-);
-*/
-/*
-const refDate = new Date();
-console.group('date utils - add');
-console.log('ms', refDate.toISOString(), add(refDate, 1, 'ms').toISOString());
-console.log(
-  'second',
-  refDate.toISOString(),
-  add(refDate, 1, 'second').toISOString()
-);
-console.log(
-  'minute',
-  refDate.toISOString(),
-  add(refDate, 1, 'minute').toISOString()
-);
-console.log(
-  'hour',
-  refDate.toISOString(),
-  add(refDate, 1, 'hour').toISOString()
-);
-console.log(
-  'day/date',
-  refDate.toISOString(),
-  add(refDate, 1, 'day').toISOString()
-);
-console.log(
-  'month',
-  refDate.toISOString(),
-  add(refDate, 1, 'month').toISOString()
-);
-console.log(
-  'year',
-  refDate.toISOString(),
-  add(refDate, 1, 'year').toISOString()
-);
-console.groupEnd();
-
-console.group('date utils - subtract');
-console.log(
-  'ms',
-  refDate.toISOString(),
-  subtract(refDate, 1, 'ms').toISOString()
-);
-console.log(
-  'second',
-  refDate.toISOString(),
-  subtract(refDate, 1, 'second').toISOString()
-);
-console.log(
-  'minute',
-  refDate.toISOString(),
-  subtract(refDate, 1, 'minute').toISOString()
-);
-console.log(
-  'hour',
-  refDate.toISOString(),
-  subtract(refDate, 1, 'hour').toISOString()
-);
-console.log(
-  'day/date',
-  refDate.toISOString(),
-  subtract(refDate, 1, 'day').toISOString()
-);
-console.log(
-  'month',
-  refDate.toISOString(),
-  subtract(refDate, 1, 'month').toISOString()
-);
-console.log(
-  'year',
-  refDate.toISOString(),
-  subtract(refDate, 1, 'year').toISOString()
-);
-console.groupEnd();
-
-console.group('date utils - add subtract equality');
-console.log('ms', datesSame(add(subtract(refDate, 1, 'ms'), 1, 'ms'), refDate));
-console.log(
-  'second',
-  datesSame(add(subtract(refDate, 1, 'second'), 1, 'second'), refDate)
-);
-console.log(
-  'minute',
-  datesSame(add(subtract(refDate, 1, 'minute'), 1, 'minute'), refDate)
-);
-console.log(
-  'hour',
-  datesSame(add(subtract(refDate, 1, 'hour'), 1, 'hour'), refDate)
-);
-console.log(
-  'day/date',
-  datesSame(add(subtract(refDate, 1, 'day'), 1, 'date'), refDate)
-);
-console.log(
-  'month',
-  datesSame(add(subtract(refDate, 1, 'month'), 1, 'month'), refDate)
-);
-console.log(
-  'year',
-  datesSame(add(subtract(refDate, 1, 'year'), 1, 'year'), refDate)
-);
-console.groupEnd();
-
-console.group('date utils - subtract add equality');
-console.log('ms', datesSame(subtract(add(refDate, 1, 'ms'), 1, 'ms'), refDate));
-console.log(
-  'second',
-  datesSame(subtract(add(refDate, 1, 'second'), 1, 'second'), refDate)
-);
-console.log(
-  'minute',
-  datesSame(subtract(add(refDate, 1, 'minute'), 1, 'minute'), refDate)
-);
-console.log(
-  'hour',
-  datesSame(subtract(add(refDate, 1, 'hour'), 1, 'hour'), refDate)
-);
-console.log(
-  'day/date',
-  datesSame(subtract(add(refDate, 1, 'day'), 1, 'date'), refDate)
-);
-console.log(
-  'month',
-  datesSame(subtract(add(refDate, 1, 'month'), 1, 'month'), refDate)
-);
-console.log(
-  'year',
-  datesSame(subtract(add(refDate, 1, 'year'), 1, 'year'), refDate)
-);
-console.groupEnd();
-*/

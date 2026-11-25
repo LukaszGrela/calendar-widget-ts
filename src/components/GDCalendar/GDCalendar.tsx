@@ -17,6 +17,7 @@ export const GDCalendar: FC<IProps> = ({
   className,
   selection,
   onDateSelected,
+  navigateOnSelect = true,
   mondayFirst,
   locale,
   animate,
@@ -39,6 +40,7 @@ export const GDCalendar: FC<IProps> = ({
         selection={selection}
         onDateSelected={onDateSelected}
         onDateChanged={onDateChanged}
+        navigateOnSelect={navigateOnSelect}
       >
         <div
           className={classNames(

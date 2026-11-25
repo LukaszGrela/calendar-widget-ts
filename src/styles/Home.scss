@@ -1,7 +1,12 @@
 .home {
-    nav {
-        display: flex;
-        flex-direction: column;
-        padding: 2rem;
-    }
+  nav,
+  nav > .group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  nav {
+    padding: 2rem;
+    gap: 1rem;
+  }
 }

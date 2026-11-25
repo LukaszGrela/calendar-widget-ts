@@ -3,12 +3,46 @@ import { type IProps as IAnimatedContainerProps } from './AnimatedContainer';
 export type TWorkingWeek = 7 | 6 | 5;
 export interface IProps {
   // current month and day
+  /**
+   * Reference date of the displayed month.
+   * When provided, the calendar is controlled: it does not change the
+   * displayed month itself, it only asks for the change via `onDateChanged`.
+   */
   date?: Date;
+
+  /**
+   * Navigation callback - reports a *requested* month change:
+   * - called by `next*`/`prev*`/`set*` actions,
+   * - in controlled mode also when a "spill" day outside the displayed month
+   *   is selected and `navigateOnSelect` is enabled.
+   * It never reports a selection - use `onDateSelected` for that.
+   */
   onDateChanged?: (date: Date) => void;
 
-  // Selected date
+  /**
+   * Selected date (`Date`) or range (`[start, end]`).
+   * Passing `undefined` keeps the calendar uncontrolled, `null` clears it.
+   * A single selected day is a complete, one day long range - see
+   * `TRangeSelection`.
+   */
   selection?: Date | TRangeSelection | null;
+
+  /**
+   * Selection callback - called on every user selection, including a "spill"
+   * day (a day outside the displayed month), which may additionally trigger
+   * navigation first. It is independent of `onDateChanged`.
+   */
   onDateSelected?: (date?: Date | TRangeSelection | null) => void;
+
+  /**
+   * Should selecting a "spill" day outside the displayed month navigate to
+   * that month.
+   * - uncontrolled: the calendar changes the displayed month itself,
+   * - controlled: it calls `onDateChanged` and lets the owner decide.
+   * Selection is always reported through `onDateSelected`, regardless of
+   * this flag. By default `true` (previous behaviour).
+   */
+  navigateOnSelect?: boolean;
 
   yearSpan?: number;
 
@@ -39,7 +73,12 @@ export interface IProps {
   /**
    * Use it to customise `holiday` property setup.
    * @param date Date to test if it is a holiday
-   * @returns `true` if given date should be marked as `holiday`. Return `null` for default behaviour.
+   * @returns `true` if given date should be marked as `holiday`, `false` to
+   * clear the marking (this also disables the default Sunday marking for that
+   * day), `null`/`undefined` to keep the default behaviour.
+   *
+   * A throwing callback cannot break the calendar: the error is caught, the day
+   * keeps the default marking and the error is logged only in development.
    */
   holidayCallback?: (date: Date) => boolean | null;
 }
@@ -56,4 +95,13 @@ export type TDateData = {
   weekend?: boolean;
 };
 
+/**
+ * Range selection: `[start, end]`, where both ends are optional while the user
+ * is still picking.
+ *
+ * A single selected day is a valid, complete range: it is reported as
+ * `[date, null]` and that day receives both the `start` and the `end` class, so
+ * a one day range can be styled like any other range. `[null, null]` means that
+ * nothing is selected.
+ */
 export type TRangeSelection = [start: Date | null, end: Date | null];

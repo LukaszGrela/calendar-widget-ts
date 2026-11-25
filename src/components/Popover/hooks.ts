@@ -12,8 +12,7 @@ import {
 } from '@floating-ui/react';
 import type { IPopoverOptions } from './types';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function usePopover<E = any>({
+export function usePopover<E = unknown>({
   initialOpen = false,
   placement = 'bottom',
   modal,

@@ -1,5 +1,6 @@
-import React, { useCallback, type ReactNode } from 'react';
+import React, { useCallback, useMemo, type ReactNode } from 'react';
 import { classNames } from '../../../utils/classNames';
+import { useGDCalendarContext } from '../context/GDCalendarContext';
 import type { TDateProps } from './types';
 
 const GDCalendarDay: React.FC<TDateProps> = ({
@@ -10,12 +11,24 @@ const GDCalendarDay: React.FC<TDateProps> = ({
   data,
   endSelection,
   startSelection,
+  disabled,
 }: TDateProps): ReactNode => {
+  const { locale } = useGDCalendarContext();
+
   const clickHandler = useCallback(() => {
     onClick(data);
   }, [data, onClick]);
+
+  // Screen readers get the full date, not just the day number.
+  const label = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, { dateStyle: 'full' }).format(data.date),
+    [data.date, locale]
+  );
+
   return (
-    <div
+    <button
+      type="button"
       className={classNames(
         'GDCalendar_Day',
         'date',
@@ -28,11 +41,14 @@ const GDCalendarDay: React.FC<TDateProps> = ({
         data.spill && 'spill',
         today && 'today'
       )}
-      role={'button'}
+      aria-label={label}
+      aria-pressed={!!selected}
+      aria-current={today ? 'date' : undefined}
+      disabled={disabled}
       onClick={clickHandler}
     >
       {data.date.getDate()}
-    </div>
+    </button>
   );
 };
 

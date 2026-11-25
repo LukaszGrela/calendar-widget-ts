@@ -8,31 +8,50 @@ import { GDCalendarSelectionProvider } from '../context/GDCalendarSelectionProvi
 import { datesSame } from '../utils';
 
 export const GDCalendarSelectionWrapper: FC<
-  Pick<IProps, 'onDateSelected' | 'selection' | 'onDateChanged'> & {
+  Pick<
+    IProps,
+    'onDateSelected' | 'selection' | 'onDateChanged' | 'navigateOnSelect'
+  > & {
     children: ReactNode;
   }
-> = ({ children, selection, onDateSelected, onDateChanged }) => {
+> = ({
+  children,
+  selection,
+  onDateSelected,
+  onDateChanged,
+  navigateOnSelect = true,
+}) => {
   const { isControlled, currentMonth } = useGDCalendarContext();
   const actions = useGDCalendarActionsContext();
 
   const selectionHandler = useCallback(
     (arg?: Date | TRangeSelection | null) => {
-      if (
-        arg &&
-        arg instanceof Date &&
-        !datesSame(arg, currentMonth, 'month')
-      ) {
-        if (!isControlled) {
+      const isSpillDay =
+        arg instanceof Date && !datesSame(arg, currentMonth, 'month');
+
+      // Navigation and selection are two separate concerns: selecting a
+      // day outside the displayed month may ask for a month change, but
+      // it stays a selection first.
+      if (navigateOnSelect && isSpillDay) {
+        if (isControlled) {
+          // controlled: only request the change, the owner decides
+          onDateChanged?.(arg);
+        } else {
           // navigate to this dates month
           actions?.setDisplayedMonth(arg);
-        } else {
-          onDateChanged?.(arg);
         }
       }
 
       onDateSelected?.(arg);
     },
-    [actions, currentMonth, isControlled, onDateChanged, onDateSelected]
+    [
+      actions,
+      currentMonth,
+      isControlled,
+      navigateOnSelect,
+      onDateChanged,
+      onDateSelected,
+    ]
   );
 
   return (
