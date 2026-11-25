@@ -90,4 +90,20 @@ describe('GDCalendarProvider navigation', () => {
 
     expect(ymd(last())).toEqual([2025, 1, 28]);
   });
+
+  it('moves 31 December to January of the next year', () => {
+    const { run, last } = setup(new Date(2026, 11, 31));
+
+    run((context) => context.nextMonth());
+
+    expect(ymd(last())).toEqual([2027, 0, 31]);
+  });
+
+  it('moves January back to December of the previous year', () => {
+    const { run, last } = setup(new Date(2027, 0, 15));
+
+    run((context) => context.prevMonth());
+
+    expect(ymd(last())).toEqual([2026, 11, 15]);
+  });
 });

@@ -63,8 +63,10 @@ export const daysInMonth = (year: number, monthIndex: number): number =>
  * Moves a date to another month of the same year, keeping the day of month
  * but clamping it to the last day of the target month (31 Jan -> 28/29 Feb).
  * @param date Source date, not mutated.
- * @param monthIndex Target month, clamped to 0..11. Values outside are normalised by Date.
+ * @param monthIndex Target month, clamped to 0..11. The year is never changed.
  * @returns A new Date at the same time of day.
+ * @remarks Use {@link add} / {@link subtract} when the move has to cross the
+ * year boundary, e.g. December 2026 + 1 month -> January 2027.
  */
 export const setMonthSafe = (date: Date, monthIndex: number): Date => {
   const change = clone(date);
@@ -98,8 +100,19 @@ export const setYearSafe = (date: Date, year: number): Date => {
   return change;
 };
 
-const addMonth = (date: Date, amount: number): Date =>
-  setMonthSafe(date, date.getMonth() + amount);
+const addMonth = (date: Date, amount: number): Date => {
+  const change = clone(date);
+  const day = change.getDate();
+  const targetMonth = change.getMonth() + amount;
+  const year = change.getFullYear() + Math.floor(targetMonth / 12);
+  const month = ((targetMonth % 12) + 12) % 12;
+
+  change.setDate(1);
+  change.setFullYear(year, month, 1);
+  change.setDate(Math.min(day, daysInMonth(year, month)));
+
+  return change;
+};
 const addYear = (date: Date, amount: number): Date =>
   setYearSafe(date, date.getFullYear() + amount);
 

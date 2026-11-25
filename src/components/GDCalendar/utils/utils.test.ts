@@ -1,5 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { calendarDates, datesSame, monthNames, weekDays } from '../utils';
+import {
+  add,
+  calendarDates,
+  datesSame,
+  monthNames,
+  setMonthSafe,
+  setYearSafe,
+  subtract,
+  weekDays,
+} from '../utils';
 
 const flattenDates = (
   holidayCallback?: (date: Date) => boolean | null
@@ -352,6 +361,127 @@ describe('utils', () => {
       } finally {
         errorSpy.mockRestore();
       }
+    });
+  });
+
+  describe('setMonthSafe', () => {
+    it('keeps the day of month when the target month is long enough', () => {
+      expect(setMonthSafe(new Date(2026, 0, 15), 3)).toEqual(
+        new Date(2026, 3, 15)
+      );
+    });
+
+    it('clamps the day to the last day of a shorter month', () => {
+      expect(setMonthSafe(new Date(2026, 0, 31), 1)).toEqual(
+        new Date(2026, 1, 28)
+      );
+    });
+
+    it('clamps to 29 February in a leap year', () => {
+      expect(setMonthSafe(new Date(2028, 0, 31), 1)).toEqual(
+        new Date(2028, 1, 29)
+      );
+    });
+
+    it('clamps monthIndex to 0..11 and keeps the year', () => {
+      expect(setMonthSafe(new Date(2026, 0, 15), 12)).toEqual(
+        new Date(2026, 11, 15)
+      );
+      expect(setMonthSafe(new Date(2026, 5, 15), -1)).toEqual(
+        new Date(2026, 0, 15)
+      );
+      expect(setMonthSafe(new Date(2026, 11, 31), 1)).toEqual(
+        new Date(2026, 1, 28)
+      );
+    });
+
+    it('preserves the time of day', () => {
+      const result = setMonthSafe(new Date(2026, 0, 31, 13, 45, 30, 250), 1);
+
+      expect(result.getHours()).toBe(13);
+      expect(result.getMinutes()).toBe(45);
+      expect(result.getSeconds()).toBe(30);
+      expect(result.getMilliseconds()).toBe(250);
+    });
+
+    it('does not mutate the source date', () => {
+      const source = new Date(2026, 0, 31, 10);
+
+      setMonthSafe(source, 1);
+
+      expect(source).toEqual(new Date(2026, 0, 31, 10));
+    });
+  });
+
+  describe('setYearSafe', () => {
+    it('keeps month and day for a regular date', () => {
+      expect(setYearSafe(new Date(2026, 5, 15, 8, 30), 2027)).toEqual(
+        new Date(2027, 5, 15, 8, 30)
+      );
+    });
+
+    it('clamps 29 February in a non leap year', () => {
+      expect(setYearSafe(new Date(2024, 1, 29), 2025)).toEqual(
+        new Date(2025, 1, 28)
+      );
+    });
+
+    it('does not mutate the source date', () => {
+      const source = new Date(2024, 1, 29);
+
+      setYearSafe(source, 2025);
+
+      expect(source).toEqual(new Date(2024, 1, 29));
+    });
+  });
+
+  describe('month arithmetic across the year boundary', () => {
+    it('moves December to January of the next year', () => {
+      expect(add(new Date(2026, 11, 15), 1, 'month')).toEqual(
+        new Date(2027, 0, 15)
+      );
+      expect(add(new Date(2026, 11, 31), 1, 'month')).toEqual(
+        new Date(2027, 0, 31)
+      );
+    });
+
+    it('moves January back to December of the previous year', () => {
+      expect(subtract(new Date(2027, 0, 15), 1, 'month')).toEqual(
+        new Date(2026, 11, 15)
+      );
+      expect(subtract(new Date(2027, 0, 31), 1, 'month')).toEqual(
+        new Date(2026, 11, 31)
+      );
+    });
+
+    it('handles multi month steps spanning one or more years', () => {
+      expect(add(new Date(2026, 11, 15), 3, 'month')).toEqual(
+        new Date(2027, 2, 15)
+      );
+      expect(add(new Date(2026, 11, 15), 13, 'month')).toEqual(
+        new Date(2028, 0, 15)
+      );
+      expect(subtract(new Date(2027, 0, 15), 13, 'month')).toEqual(
+        new Date(2025, 11, 15)
+      );
+    });
+
+    it('still clamps the day of month across the boundary', () => {
+      expect(subtract(new Date(2027, 2, 31), 1, 'month')).toEqual(
+        new Date(2027, 1, 28)
+      );
+      expect(add(new Date(2024, 1, 29), 12, 'month')).toEqual(
+        new Date(2025, 1, 28)
+      );
+    });
+
+    it('keeps the time of day and does not mutate the source date', () => {
+      const source = new Date(2026, 11, 31, 23, 59, 58, 700);
+
+      const result = add(source, 1, 'month');
+
+      expect(result).toEqual(new Date(2027, 0, 31, 23, 59, 58, 700));
+      expect(source).toEqual(new Date(2026, 11, 31, 23, 59, 58, 700));
     });
   });
 });
