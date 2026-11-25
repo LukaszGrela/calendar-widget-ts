@@ -1,0 +1,18 @@
+import type { FC, SVGProps } from 'react';
+
+const IconChevronLeft: FC<SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 451.8 564.75"
+    aria-hidden="true"
+    fill="currentColor"
+    {...props}
+    stroke="none"
+  >
+    <path
+      transform="rotate(90 225.9 282.375)"
+      d="M225.9,354.7c-8.1,0-16.2-3.1-22.4-9.3L9.3,151.2c-12.4-12.4-12.4-32.4,0-44.8c12.4-12.4,32.4-12.4,44.7,0l171.9,171.9 l171.9-171.9c12.4-12.4,32.4-12.4,44.7,0c12.4,12.4,12.4,32.4,0,44.8L248.3,345.4C242.1,351.6,234,354.7,225.9,354.7z"
+    />
+  </svg>
+);
+export default IconChevronLeft;

@@ -48,7 +48,21 @@ footer {
 header {
   margin: 1rem auto;
   h1 {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
     margin: 0 1rem;
+  }
+  svg {
+    width: 1em;
+    height: 1em;
+  }
+  button {
+    border: none;
+    padding: 0;
+    font-size: unset;
+    color: unset;
+    height: 1em;
   }
 }
 
